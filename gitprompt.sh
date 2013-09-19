@@ -2,180 +2,284 @@
 
 function git_prompt_dir()
 {
-  # assume the gitstatus.py is in the same directory as this script
-  # code thanks to http://stackoverflow.com/questions/59895
-  if [ -z "${__GIT_PROMPT_DIR}" ]; then
-    local SOURCE="${BASH_SOURCE[0]}"
-    while [ -h "${SOURCE}" ]; do
-      local DIR="$( cd -P "$( dirname "${SOURCE}" )" && pwd )"
-      SOURCE="$(readlink "${SOURCE}")"
-      [[ $SOURCE != /* ]] && SOURCE="${DIR}/${SOURCE}"
-    done
-    __GIT_PROMPT_DIR="$( cd -P "$( dirname "${SOURCE}" )" && pwd )"
+	# assume the gitstatus.py is in the same directory as this script
+	# code thanks to http://stackoverflow.com/questions/59895
+	if [ -z "${__GIT_PROMPT_DIR}" ]; then
+	local SOURCE="${BASH_SOURCE[0]}"
+	while [ -h "${SOURCE}" ]; do
+		local DIR="$( cd -P "$( dirname "${SOURCE}" )" && pwd )"
+		SOURCE="$(readlink "${SOURCE}")"
+		[[ $SOURCE != /* ]] && SOURCE="${DIR}/${SOURCE}"
+	done
+	__GIT_PROMPT_DIR="$( cd -P "$( dirname "${SOURCE}" )" && pwd )"
 fi
 }
 
 function git_prompt_config()
 {
-  # Colors
-  ResetColor="\[\033[0m\]"            # Text reset
+	# Colors
+	ResetColor="\[\033[0m\]"            # Text reset
 
-  # Bold
-  local BoldGreen="\[\033[1;32m\]"    # Green
-  local BoldBlue="\[\033[1;34m\]"     # Blue
+	# Bold
+	local BoldGreen="\[\033[1;32m\]"    # Green
+	local BoldBlue="\[\033[1;34m\]"     # Blue
 
-  # High Intensty
-  local IntenseBlack="\[\033[0;90m\]" # Grey
+	# High Intensty
+	local IntenseBlack="\[\033[0;90m\]" # Grey
 
-  # Bold High Intensty
-  local Magenta="\[\033[1;95m\]"      # Purple
+	# Bold High Intensty
+	local Magenta="\[\033[1;95m\]"      # Purple
 
-  # Regular Colors
-  local Yellow="\[\033[0;33m\]"
-  local White='\[\033[37m\]'
-  local Red="\[\033[0;31m\]"
-  local Blue="\[\033[0;34m\]"
+	# Regular Colors
+	local Yellow="\[\033[0;33m\]"
+	local White='\[\033[37m\]'
+	local Red="\[\033[0;31m\]"
+	local Blue="\[\033[0;34m\]"
 
-  # Default values for the appearance of the prompt. Configure at will.
-  GIT_PROMPT_PREFIX="["
-  GIT_PROMPT_SUFFIX="]"
-  GIT_PROMPT_SEPARATOR="|"
-  GIT_PROMPT_BRANCH="${Magenta}"
-  GIT_PROMPT_STAGED="${Red}● "
-  GIT_PROMPT_CONFLICTS="${Red}✖ "
-  GIT_PROMPT_CHANGED="${Blue}✚ "
-  GIT_PROMPT_REMOTE=" "
-  GIT_PROMPT_UNTRACKED="…"
-  GIT_PROMPT_CLEAN="${BoldGreen}✔"
+	# More Bold Colors
+	BBlack='\e[1;30m'       # Black
+	BRed='\e[1;31m'         # Red
+	BGreen='\e[1;32m'       # Green
+	BYellow='\e[1;33m'      # Yellow
+	BBlue='\e[1;34m'        # Blue
+	BPurple='\e[1;35m'      # Purple
+	BCyan='\e[1;36m'        # Cyan
+	BWhite='\e[1;37m'       # White
 
-  # Various variables you might want for your PS1 prompt instead
-  local Time12a="\$(date +%H:%M)"
-  # local Time12a="(\$(date +%H:%M:%S))"
-  # local Time12a="(\@))"
-  local PathShort="\w"
+	# Default values for the appearance of the prompt. Configure at will.
+	GIT_PROMPT_PREFIX="["
+	GIT_PROMPT_SUFFIX="]"
+	GIT_PROMPT_SEPARATOR="|"
+	GIT_PROMPT_BRANCH="${Magenta}"
+	GIT_PROMPT_STAGED="${Red}● "
+	GIT_PROMPT_CONFLICTS="${Red}✖ "
+	GIT_PROMPT_CHANGED="${Blue}✚ "
+	GIT_PROMPT_REMOTE=" "
+	GIT_PROMPT_UNTRACKED="…"
+	GIT_PROMPT_CLEAN="${BoldGreen}✔"
 
-  if [ "x${GIT_PROMPT_START}" == "x" ]; then
-    PROMPT_START="${Yellow}${PathShort}${ResetColor}"
-  else
-    PROMPT_START="${GIT_PROMPT_START}"
-  fi
+	# Various variables you might want for your PS1 prompt instead
+	local Time12a="\$(date +%H:%M)"
+	# local Time12a="(\$(date +%H:%M:%S))"
+	# local Time12a="(\@))"
+	local PathShort="\w"
+	local User="\u"
+	local Host="\h"
 
-  if [ "x${GIT_PROMPT_END}" == "x" ]; then
-    PROMPT_END=" \n${White}${Time12a}${ResetColor} $ "
-  else
-    PROMPT_END="${GIT_PROMPT_END}"
-  fi
 
-  EMPTY_PROMPT="${PROMPT_START}${PROMPT_END}"
+######################
 
-  # fetch remote revisions every other $GIT_PROMPT_FETCH_TIMEOUT (default 5) minutes
-  GIT_PROMPT_FETCH_TIMEOUT=${1-5}
-  if [ "x$__GIT_STATUS_CMD" == "x" ]
-  then
-    git_prompt_dir
-    __GIT_STATUS_CMD="${__GIT_PROMPT_DIR}/gitstatus.py"
-  fi
+if [[ $COLORTERM = gnome-* && $TERM = xterm ]] && infocmp gnome-256color >/dev/null 2>&1; then
+	export TERM=gnome-256color
+elif infocmp xterm-256color >/dev/null 2>&1; then
+	export TERM=xterm-256color
+fi
+
+if tput setaf 1 &> /dev/null; then
+	tput sgr0
+	if [[ $(tput colors) -ge 256 ]] 2>/dev/null; then
+		MAGENTA=$(tput setaf 9)
+		ORANGE=$(tput setaf 172)
+		GREEN=$(tput setaf 2) # original 190
+		PURPLE=$(tput setaf 141)
+		WHITE=$(tput setaf 256)
+	else
+		MAGENTA=$(tput setaf 5)
+		ORANGE=$(tput setaf 4)
+		GREEN=$(tput setaf 2)
+		PURPLE=$(tput setaf 1)
+		WHITE=$(tput setaf 7)
+	fi
+	BOLD=$(tput bold)
+	RESET=$(tput sgr0)
+else
+	MAGENTA="\033[1;31m"
+	ORANGE="\033[1;33m"
+	GREEN="\033[1;32m"
+	PURPLE="\033[1;35m"
+	WHITE="\033[1;37m"
+	BOLD=""
+	RESET="\033[m"
+fi
+
+export MAGENTA
+export ORANGE
+export GREEN
+export PURPLE
+export WHITE
+export BOLD
+export RESET
+
+command_style=$reset_style'\[\033[1;29m\]' # bold black
+
+# set color for user and for root
+local UserColor=$BGreen         # user's color
+[ $UID -eq "0" ] && UserColor=$BRed # root's color
+
+# Reset color for command output
+# (this one is invoked every time before a command is executed):
+trap 'echo -ne "\033[00m"' DEBUG
+
+# Color for the fill
+# gray color; use 0;37m for lighter color
+status_style=$reset_style'\[\033[0;90m\]'
+
+# create a $fill of all screen width minus the time string and a space:
+fill="--- "
+# time information = 8 spaces, one space: before time, one space for return value, space before and after return value
+let fillsize=${COLUMNS}-12
+fill=""
+while [ "$fillsize" -gt "0" ]
+do
+	# fill with underscores to work on
+	fill="-${fill}"
+	let fillsize=${fillsize}-1
+done
+
+#return value visualisation
+local error="\$(if [[ \$? == 0 ]]; then echo \"${BGreen}\342\234\223\"; else echo \"\[\033[01;31m\]\342\234\227\"; fi)"
+
+
+# If this is an xterm set the title to user@host:dir
+case "$TERM" in
+	xterm*|rxvt*)
+		bname=`basename "${PWD/$HOME/~}"`
+		temp=$(tty)
+		# set title only on pts terminal, not on tty (e.g. Ctrl+Alt+F1)
+		if  [[ ${temp:5:3} == "pts" ]]; then
+			echo -ne "\033]0;${bname}: ${USER}@${HOSTNAME}: ${PWD/$HOME/~}\007"
+		fi
+		;;
+	*)
+		;;
+esac
+
+
+######################
+
+	if [ "x${GIT_PROMPT_START}" == "x" ]; then
+	# My modified prompt
+	PROMPT_START=" ${error} ${status_style}${fill} \t\n${UserColor}${User}${ResetColor}@${BOLD}${ORANGE}${Host}${ResetColor}: ${BOLD}${PathShort}/${ResetColor}"
+	else
+	PROMPT_START="${GIT_PROMPT_START}"
+	fi
+
+	if [ "x${GIT_PROMPT_END}" == "x" ]; then
+	PROMPT_END="\n${BWhite}\$ ${command_style}"
+	else
+	PROMPT_END="${GIT_PROMPT_END}"
+	fi
+
+	EMPTY_PROMPT="${PROMPT_START}${PROMPT_END}"
+
+	# fetch remote revisions every other $GIT_PROMPT_FETCH_TIMEOUT (default 5) minutes
+	GIT_PROMPT_FETCH_TIMEOUT=${1-5}
+	if [ "x$__GIT_STATUS_CMD" == "x" ]
+	then
+	git_prompt_dir
+	__GIT_STATUS_CMD="${__GIT_PROMPT_DIR}/gitstatus.py"
+	fi
 }
 
 function setGitPrompt() {
 
-  local GIT_PROMPT_PREFIX
-  local GIT_PROMPT_SUFFIX
-  local GIT_PROMPT_SEPARATOR
-  local GIT_PROMPT_BRANCH
-  local GIT_PROMPT_STAGED
-  local GIT_PROMPT_CONFLICTS
-  local GIT_PROMPT_CHANGED
-  local GIT_PROMPT_REMOTE
-  local GIT_PROMPT_UNTRACKED
-  local GIT_PROMPT_CLEAN
-  local PROMPT_START
-  local PROMPT_END
-  local EMPTY_PROMPT
-  local ResetColor
-  local Blue
-  local GIT_PROMPT_FETCH_TIMEOUT
-  local __GIT_STATUS_CMD
+	local GIT_PROMPT_PREFIX
+	local GIT_PROMPT_SUFFIX
+	local GIT_PROMPT_SEPARATOR
+	local GIT_PROMPT_BRANCH
+	local GIT_PROMPT_STAGED
+	local GIT_PROMPT_CONFLICTS
+	local GIT_PROMPT_CHANGED
+	local GIT_PROMPT_REMOTE
+	local GIT_PROMPT_UNTRACKED
+	local GIT_PROMPT_CLEAN
+	local PROMPT_START
+	local PROMPT_END
+	local EMPTY_PROMPT
+	local ResetColor
+	local Blue
+	local GIT_PROMPT_FETCH_TIMEOUT
+	local __GIT_STATUS_CMD
 
-  git_prompt_config
-  
-  local repo=`git rev-parse --show-toplevel 2> /dev/null`
-  if [[ ! -e "${repo}" ]]; then
-    PS1="${EMPTY_PROMPT}"
-    return
-  fi
+	git_prompt_config
 
-  local FETCH_HEAD="${repo}/.git/FETCH_HEAD"
-  # Fech repo if local is stale for more than $GIT_FETCH_TIMEOUT minutes
-  if [[ ! -e "${FETCH_HEAD}"  ||  -e `find "${FETCH_HEAD}" -mmin +${GIT_PROMPT_FETCH_TIMEOUT}` ]]
-  then
-    [[ -n $(git remote show) ]] && git fetch --quiet
-  fi
+	local repo=`git rev-parse --show-toplevel 2> /dev/null`
+	if [[ ! -e "${repo}" ]]; then
+	PS1="${EMPTY_PROMPT}"
+	return
+	fi
 
-  local -a GitStatus
-  GitStatus=($("${__GIT_STATUS_CMD}" 2>/dev/null))
+	local FETCH_HEAD="${repo}/.git/FETCH_HEAD"
+	# Fech repo if local is stale for more than $GIT_FETCH_TIMEOUT minutes
+	if [[ ! -e "${FETCH_HEAD}"  ||  -e `find "${FETCH_HEAD}" -mmin +${GIT_PROMPT_FETCH_TIMEOUT}` ]]
+	then
+	[[ -n $(git remote show) ]] && git fetch --quiet
+	fi
 
-  local GIT_BRANCH=${GitStatus[0]}
-  local GIT_REMOTE=${GitStatus[1]}
-  if [[ "." == "$GIT_REMOTE" ]]; then
-    unset GIT_REMOTE
-  fi
-  local GIT_STAGED=${GitStatus[2]}
-  local GIT_CONFLICTS=${GitStatus[3]}
-  local GIT_CHANGED=${GitStatus[4]}
-  local GIT_UNTRACKED=${GitStatus[5]}
-  local GIT_CLEAN=${GitStatus[6]}
+	local -a GitStatus
+	GitStatus=($("${__GIT_STATUS_CMD}" 2>/dev/null))
 
-  if [[ -n "${GitStatus}" ]]; then
-    local STATUS=" ${GIT_PROMPT_PREFIX}${GIT_PROMPT_BRANCH}${GIT_BRANCH}${ResetColor}"
+	local GIT_BRANCH=${GitStatus[0]}
+	local GIT_REMOTE=${GitStatus[1]}
+	if [[ "." == "$GIT_REMOTE" ]]; then
+	unset GIT_REMOTE
+	fi
+	local GIT_STAGED=${GitStatus[2]}
+	local GIT_CONFLICTS=${GitStatus[3]}
+	local GIT_CHANGED=${GitStatus[4]}
+	local GIT_UNTRACKED=${GitStatus[5]}
+	local GIT_CLEAN=${GitStatus[6]}
 
-    if [[ -n "${GIT_REMOTE}" ]]; then
-      STATUS="${STATUS}${GIT_PROMPT_REMOTE}${GIT_REMOTE}${ResetColor}"
-    fi
+	if [[ -n "${GitStatus}" ]]; then
+	local STATUS=" ${GIT_PROMPT_PREFIX}${GIT_PROMPT_BRANCH}${GIT_BRANCH}${ResetColor}"
 
-    STATUS="${STATUS}${GIT_PROMPT_SEPARATOR}"
-    if [ "${GIT_STAGED}" -ne "0" ]; then
-      STATUS="${STATUS}${GIT_PROMPT_STAGED}${GIT_STAGED}${ResetColor}"
-    fi
+	if [[ -n "${GIT_REMOTE}" ]]; then
+		STATUS="${STATUS}${GIT_PROMPT_REMOTE}${GIT_REMOTE}${ResetColor}"
+	fi
 
-    if [ "${GIT_CONFLICTS}" -ne "0" ]; then
-      STATUS="${STATUS}${GIT_PROMPT_CONFLICTS}${GIT_CONFLICTS}${ResetColor}"
-    fi
-    
-    if [ "${GIT_CHANGED}" -ne "0" ]; then
-      STATUS="${STATUS}${GIT_PROMPT_CHANGED}${GIT_CHANGED}${ResetColor}"
-    fi
-    
-    if [ "${GIT_UNTRACKED}" -ne "0" ]; then
-      STATUS="${STATUS}${GIT_PROMPT_UNTRACKED}${GIT_UNTRACKED}${ResetColor}"
-    fi
-    
-    if [ "${GIT_CLEAN}" -eq "1" ]; then
-      STATUS="${STATUS}${GIT_PROMPT_CLEAN}"
-    fi
-    
-    STATUS="${STATUS}${ResetColor}${GIT_PROMPT_SUFFIX}"
+	STATUS="${STATUS}${GIT_PROMPT_SEPARATOR}"
+	if [ "${GIT_STAGED}" -ne "0" ]; then
+		STATUS="${STATUS}${GIT_PROMPT_STAGED}${GIT_STAGED}${ResetColor}"
+	fi
+
+	if [ "${GIT_CONFLICTS}" -ne "0" ]; then
+		STATUS="${STATUS}${GIT_PROMPT_CONFLICTS}${GIT_CONFLICTS}${ResetColor}"
+	fi
+
+	if [ "${GIT_CHANGED}" -ne "0" ]; then
+		STATUS="${STATUS}${GIT_PROMPT_CHANGED}${GIT_CHANGED}${ResetColor}"
+	fi
+
+	if [ "${GIT_UNTRACKED}" -ne "0" ]; then
+		STATUS="${STATUS}${GIT_PROMPT_UNTRACKED}${GIT_UNTRACKED}${ResetColor}"
+	fi
+
+	if [ "${GIT_CLEAN}" -eq "1" ]; then
+		STATUS="${STATUS}${GIT_PROMPT_CLEAN}"
+	fi
+
+	STATUS="${STATUS}${ResetColor}${GIT_PROMPT_SUFFIX}"
 
 
-    PS1="${PROMPT_START}${STATUS}${PROMPT_END}"
-    if [[ -n "${VIRTUAL_ENV}" ]]; then
-      PS1="${Blue}($(basename "${VIRTUAL_ENV}"))${ResetColor} ${PS1}"
-    fi
+	PS1="${PROMPT_START}${STATUS}${PROMPT_END}"
+	if [[ -n "${VIRTUAL_ENV}" ]]; then
+		PS1="${Blue}($(basename "${VIRTUAL_ENV}"))${ResetColor} ${PS1}"
+	fi
 
-  else
-    PS1="${EMPTY_PROMPT}"
-  fi
+	else
+	PS1="${EMPTY_PROMPT}"
+	fi
 }
 
 if [ -z "$OLD_GITPROMPT" ]; then
-  OLD_GITPROMPT=$PS1
+	OLD_GITPROMPT=$PS1
 fi
 
 if [ -z "$PROMPT_COMMAND" ]; then
-  PROMPT_COMMAND=setGitPrompt
+	PROMPT_COMMAND=setGitPrompt
 else
-  PROMPT_COMMAND=${PROMPT_COMMAND%% }; # remove trailing spaces
-  PROMPT_COMMAND=${PROMPT_COMMAND%\;}; # remove trailing semi-colon
-  PROMPT_COMMAND="$PROMPT_COMMAND;setGitPrompt"
+	PROMPT_COMMAND=${PROMPT_COMMAND%% }; # remove trailing spaces
+	PROMPT_COMMAND=${PROMPT_COMMAND%\;}; # remove trailing semi-colon
+	PROMPT_COMMAND="$PROMPT_COMMAND;setGitPrompt"
 fi
 
