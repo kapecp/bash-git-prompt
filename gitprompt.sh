@@ -44,6 +44,22 @@ function git_prompt_config()
   local Blue="\[\033[0;34m\]"
   local Cyan="\[\033[0;36m\]"
 
+###################### PK changes - start
+  # NOTE: color codes must be surrounded by \[ and \]
+  # this solved problems with the prompt cursor not going to prompt
+  # start in prompt history
+
+  # More Bold Colors
+  BBlack='\[\e[1;30m\]'       # Black
+  BRed='\[\e[1;31m\]'         # Red
+  BGreen='\[\e[1;32m\]'       # Green
+  BYellow='\[\e[1;33m\]'      # Yellow
+  BBlue='\[\e[1;34m\]'        # Blue
+  BPurple='\[\e[1;35m\]'      # Purple
+  BCyan='\[\e[1;36m\]'        # Cyan
+  BWhite='\[\e[1;37m\]'       # White
+###################### PK changes - end
+
   # source the user's ~/.git-prompt-colors.sh file, or the one that should be
   # sitting in the same directory as this script
 
@@ -77,7 +93,7 @@ function git_prompt_config()
     GIT_PROMPT_UNTRACKED="${Cyan}…"
     GIT_PROMPT_STASHED="${BoldBlue}⚑"
     GIT_PROMPT_CLEAN="${BoldGreen}✔"
-    
+
     # Please do not add colors to these symbols
     GIT_PROMPT_SYMBOLS_AHEAD="↑·"
     GIT_PROMPT_SYMBOLS_BEHIND="↓·"
@@ -90,17 +106,115 @@ function git_prompt_config()
   # local Time12a="(\@))"
   local PathShort="\w"
 
+###################### PK changes - start
+  local User="\u"
+  local Host="\h"
+
+  if [[ $COLORTERM = gnome-* && $TERM = xterm ]] && infocmp gnome-256color >/dev/null 2>&1; then
+      export TERM=gnome-256color
+  elif infocmp xterm-256color >/dev/null 2>&1; then
+    export TERM=xterm-256color
+  fi
+
+  # If this is an xterm set the title to user@host:dir
+  case "$TERM" in
+    xterm*|rxvt*)
+      bname=`basename "${PWD/$HOME/~}"`
+      temp=$(tty)
+      # set title only on pts terminal, not on tty (e.g. Ctrl+Alt+F1)
+      if  [[ ${temp:5:3} == "pts" ]]; then
+        echo -ne "\033]0;${bname}: ${USER}@${HOSTNAME}: ${PWD/$HOME/~}\007"
+      fi
+      ;;
+    *)
+      ;;
+  esac
+
+  if tput setaf 1 &> /dev/null; then
+    tput sgr0
+    if [[ $(tput colors) -ge 256 ]] 2>/dev/null; then
+      MAGENTA=$(tput setaf 9)
+      ORANGE=$(tput setaf 172)
+      GREEN=$(tput setaf 2) # original 190
+      PURPLE=$(tput setaf 141)
+      WHITE=$(tput setaf 256)
+    else
+      MAGENTA=$(tput setaf 5)
+      ORANGE=$(tput setaf 4)
+      GREEN=$(tput setaf 2)
+      PURPLE=$(tput setaf 1)
+      WHITE=$(tput setaf 7)
+    fi
+    BOLD=$(tput bold)
+    RESET=$(tput sgr0)
+  else
+    MAGENTA="\033[1;31m"
+    ORANGE="\033[1;33m"
+    GREEN="\033[1;32m"
+    PURPLE="\033[1;35m"
+    WHITE="\033[1;37m"
+    BOLD=""
+    RESET="\033[m"
+  fi
+
+  export MAGENTA
+  export ORANGE
+  export GREEN
+  export PURPLE
+  export WHITE
+  export BOLD
+  export RESET
+
+  command_style=$reset_style'\[\033[1;29m\]' # bold black
+
+  # set color for user and for root
+  local UserColor=$BGreen         # user's color
+  [ $UID -eq "0" ] && UserColor=$BRed # root's color
+
+  # Reset color for command output
+  # (this one is invoked every time before a command is executed):
+  trap 'echo -ne "\033[00m"' DEBUG
+
+  # Color for the fill
+  # gray color; use 0;37m for lighter color
+  status_style=$reset_style'\[\033[0;90m\]'
+
+  # create a $fill of all screen width minus the time string and a space:
+  fill="--- "
+  # we need to subtract spaces:
+  # 8 spaces: time information
+  # one space: before time
+  # one space: return value
+  # one space: before return value
+  # one space: after return value
+  # total: subtract 12 from fillsize
+  let fillsize=${COLUMNS}-12
+  fill=""
+  while [ "$fillsize" -gt "0" ]
+  do
+    # fill with underscores to work on
+    fill="-${fill}"
+    let fillsize=${fillsize}-1
+  done
+
+  # return value visualisation
+  local error="\$(if [[ \$? == 0 ]]; then echo \"${BGreen}\342\234\223\"; else echo \"\[\033[01;31m\]\342\234\227\"; fi)"
+
+###################### my changed PROMPT_START and PROMPT_END
+
   if [ "x${GIT_PROMPT_START}" == "x" ]; then
-    PROMPT_START="${Yellow}${PathShort}${ResetColor}"
+    PROMPT_START=" ${error} ${status_style}${fill} \t\n${UserColor}${User}${ResetColor}@${BOLD}${ORANGE}${Host}${ResetColor}: ${BOLD}${PathShort}/${ResetColor}"
   else
     PROMPT_START="${GIT_PROMPT_START}"
   fi
 
   if [ "x${GIT_PROMPT_END}" == "x" ]; then
-    PROMPT_END=" \n${White}${Time12a}${ResetColor} $ "
+    PROMPT_END="\n${BWhite}\$ ${command_style}"
   else
     PROMPT_END="${GIT_PROMPT_END}"
   fi
+
+###################### PK changes - end
 
   # set GIT_PROMPT_LEADING_SPACE to 0 if you want to have no leading space in front of the GIT prompt
   if [ "x${GIT_PROMPT_LEADING_SPACE}" == "x0" ]; then

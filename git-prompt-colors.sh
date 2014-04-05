@@ -13,6 +13,6 @@
   GIT_PROMPT_CLEAN="${BoldGreen}✔"      # a colored flag indicating a "clean" repo
 
   # Please do not add colors to these symbols
-  GIT_PROMPT_SYMBOLS_AHEAD="↑·"         # The symbol for "n versions ahead of origin"
-  GIT_PROMPT_SYMBOLS_BEHIND="↓·"        # The symbol for "n versions behind of origin"
+  GIT_PROMPT_SYMBOLS_AHEAD="↑"         # The symbol for "n versions ahead of origin"
+  GIT_PROMPT_SYMBOLS_BEHIND="↓"        # The symbol for "n versions behind of origin"
   GIT_PROMPT_SYMBOLS_PREHASH=":"        # Written before hash of commit, if no name could be found
